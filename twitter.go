@@ -4,7 +4,6 @@ import "encoding/base64"
 import "encoding/json"
 import "net/http"
 import "io/ioutil"
-import "fmt"
 import "bytes"
 
 // Make twitter api calls
@@ -41,7 +40,6 @@ func (tc *TwitterClient) GetTweets(user string) []Tweet {
 	}
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println(string(body))
 
 	// Unmarshall response into a slice of Tweet structs
 	tweets := make([]Tweet, 0)
@@ -71,7 +69,6 @@ func (tc *TwitterClient) AppOnlyAuth() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("access token: " + auth.Access_token)
 	tc.bearerToken = auth.Access_token
 }
 
