@@ -18,10 +18,9 @@ type TwitterClient struct {
 
 // Single tweet
 type Tweet struct {
-	user      string
-	content   string
-	timestamp int
-	hashtags  []string
+	Created_at string
+	Text       string
+	Id_str     string
 }
 
 type AuthResponse struct {
@@ -31,12 +30,26 @@ type AuthResponse struct {
 
 // Returns a slice of tweets by the requested user
 func (tc *TwitterClient) GetTweets(user string) []Tweet {
-	// url := tc.timelineUrl + "?screen_name=" + user
-	res := make([]Tweet, 1)
-	return res
+	url := tc.timelineUrl + "?screen_name=" + user
+	client := &http.Client{}
+	req, _ := http.NewRequest("GET", url, nil)
+	req.Header.Add("Authorization", "Bearer "+tc.bearerToken)
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8.")
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println(string(body))
+
+	// Unmarshall response into a slice of Tweet structs
+	tweets := make([]Tweet, 0)
+	json.Unmarshal(body, &tweets)
+	return tweets
 }
 
-// Gets a bearer token for app-only authentication
+// Gets a bearer token for app-only authentication and sets it on the receiver struct
 func (tc *TwitterClient) AppOnlyAuth() {
 	toEncode := []byte(tc.consumerKey + ":" + tc.consumerSecret)
 	toSend := base64.StdEncoding.EncodeToString(toEncode)
