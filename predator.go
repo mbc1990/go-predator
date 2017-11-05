@@ -16,7 +16,7 @@ type Predator struct {
 }
 
 // Downloads and deduplicates an image
-func (p *Predator) HandleImage(url string) {
+func (p *Predator) HandleImage(url string, source string, sourceId string) {
 	defer p.Wg.Done()
 	fmt.Println("Downloading image from " + url)
 	resp, err := http.Get(url)
@@ -31,6 +31,7 @@ func (p *Predator) HandleImage(url string) {
 
 	// Create the file and copy the response body into it
 	file, err := os.Create(p.Conf.UnclassifiedWorkDir + fname)
+	defer file.Close()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -38,7 +39,7 @@ func (p *Predator) HandleImage(url string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	file.Close()
+	p.PostgresClient.InsertImage(fname, url, source, sourceId)
 }
 
 // Hits twitter api and downloads images
@@ -51,7 +52,7 @@ func (p *Predator) ProcessTwitterTimeline(handle string) {
 			url := media.Media_url
 			// TODO: If URL in already queried, skip
 			p.Wg.Add(1)
-			go p.HandleImage(url)
+			go p.HandleImage(url, "twitter", tweet.Id_str)
 		}
 	}
 }
@@ -68,6 +69,8 @@ func (p *Predator) Run() {
 func NewPredator(conf *Configuration) *Predator {
 	p := new(Predator)
 	p.Conf = conf
+	fmt.Println("Conf: ")
+	fmt.Println(p.Conf)
 	p.TwitterClient = NewTwitterClient(p.Conf.TwitterConsumerKey, p.Conf.TwitterConsumerSecret)
 	p.PostgresClient = NewPostgresClient(p.Conf.PGHost, p.Conf.PGPort, p.Conf.PGUser, p.Conf.PGPassword, p.Conf.PGDbname)
 	var wg sync.WaitGroup
