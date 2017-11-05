@@ -29,6 +29,36 @@ func (p *PostgresClient) GetDB() *sql.DB {
 	return db
 }
 
+// Get a slice of source_ids that already exist in a database.
+// This is necessary to avoid doing thousands of simultaneous
+// db queries to check if tweets/images have already been processed.
+func (p *PostgresClient) GetExistingImages() map[string]bool {
+	db := p.GetDB()
+	defer db.Close()
+	sqlStatement := `
+    SELECT source_id FROM images`
+	rows, err := db.Query(sqlStatement)
+	defer rows.Close()
+	if err != nil {
+		panic(err)
+	}
+
+	var existing []string
+	for rows.Next() {
+		var source_id string
+		if err := rows.Scan(&source_id); err != nil {
+			panic(err)
+		}
+		existing = append(existing, source_id)
+	}
+	var res map[string]bool
+	res = make(map[string]bool)
+	for _, el := range existing {
+		res[el] = true
+	}
+	return res
+}
+
 // Add an image to the images table
 func (p *PostgresClient) InsertImage(filename string, original_url string,
 	source string, source_id string) {

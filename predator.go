@@ -50,12 +50,12 @@ func (p *Predator) HandleImage(url string, source string, sourceId string) {
 func (p *Predator) ProcessTwitterTimeline(handle string) {
 	defer p.Wg.Done()
 	res := p.TwitterClient.GetTweets(handle)
+	existing := p.PostgresClient.GetExistingImages()
 	for _, tweet := range res {
-		// If tweet has already been handled, skip
-		if p.PostgresClient.ImageExists(tweet.Id_str) {
+		// If we've processed this tweet already, continue
+		if _, ok := existing[tweet.Id_str]; ok {
 			continue
 		}
-
 		// Otherwise, grab the media URLs and process them
 		medias := tweet.Entities.Media
 		for _, media := range medias {
