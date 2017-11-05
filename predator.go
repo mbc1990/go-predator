@@ -15,7 +15,7 @@ type Predator struct {
 	Wg             *sync.WaitGroup
 }
 
-// Downloads and deduplicates an image
+// Downloads an image and writes its metadata to postgres
 func (p *Predator) HandleImage(url string, source string, sourceId string) {
 	defer p.Wg.Done()
 	fmt.Println("Downloading image from " + url)
