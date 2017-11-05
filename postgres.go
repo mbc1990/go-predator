@@ -49,13 +49,24 @@ func (p *PostgresClient) InsertImage(filename string, original_url string,
 // social media sources that provide an internally unique ID
 // connected to the image
 func (p *PostgresClient) ImageExists(sourceId string) bool {
-	// TODO: Look up by source id
-	return false
+	db := p.GetDB()
+	sqlStatement := `
+    SELECT COUNT(*) FROM images WHERE source_id IN ($1)`
+	rows, err := db.Query(sqlStatement, sourceId)
+	defer rows.Close()
+	if err != nil {
+		panic(err)
+	}
+	rows.Next()
+	var count int
+	if err := rows.Scan(&count); err != nil {
+		panic(err)
+	}
+	return count > 0
 }
 
 func NewPostgresClient(pgHost string, pgPort int, pgUser string,
 	pgPassword string, pgDbname string) *PostgresClient {
-
 	p := new(PostgresClient)
 	p.Host = pgHost
 	p.Port = pgPort

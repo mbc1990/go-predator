@@ -47,10 +47,15 @@ func (p *Predator) ProcessTwitterTimeline(handle string) {
 	defer p.Wg.Done()
 	res := p.TwitterClient.GetTweets(handle)
 	for _, tweet := range res {
+		// If tweet has already been handled, skip
+		if p.PostgresClient.ImageExists(tweet.Id_str) {
+			continue
+		}
+
+		// Otherwise, grab the media URLs and process them
 		medias := tweet.Entities.Media
 		for _, media := range medias {
 			url := media.Media_url
-			// TODO: If URL in already queried, skip
 			p.Wg.Add(1)
 			go p.HandleImage(url, "twitter", tweet.Id_str)
 		}
@@ -69,10 +74,10 @@ func (p *Predator) Run() {
 func NewPredator(conf *Configuration) *Predator {
 	p := new(Predator)
 	p.Conf = conf
-	fmt.Println("Conf: ")
-	fmt.Println(p.Conf)
-	p.TwitterClient = NewTwitterClient(p.Conf.TwitterConsumerKey, p.Conf.TwitterConsumerSecret)
-	p.PostgresClient = NewPostgresClient(p.Conf.PGHost, p.Conf.PGPort, p.Conf.PGUser, p.Conf.PGPassword, p.Conf.PGDbname)
+	p.TwitterClient = NewTwitterClient(p.Conf.TwitterConsumerKey,
+		p.Conf.TwitterConsumerSecret)
+	p.PostgresClient = NewPostgresClient(p.Conf.PGHost, p.Conf.PGPort,
+		p.Conf.PGUser, p.Conf.PGPassword, p.Conf.PGDbname)
 	var wg sync.WaitGroup
 	p.Wg = &wg
 	return p
