@@ -13,7 +13,12 @@ type Configuration struct {
 }
 
 func main() {
-	file, _ := os.Open("conf.json")
+	args := os.Args[1:]
+	if len(args) != 1 {
+		fmt.Println("Usage: ./main <absolute path to configuration file>")
+		return
+	}
+	file, _ := os.Open(args[0])
 	decoder := json.NewDecoder(file)
 	var conf = Configuration{}
 	err := decoder.Decode(&conf)
