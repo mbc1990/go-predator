@@ -9,9 +9,10 @@ import "strings"
 import "sync"
 
 type Predator struct {
-	TwitterClient *TwitterClient
-	Conf          *Configuration
-	Wg            *sync.WaitGroup
+	TwitterClient  *TwitterClient
+	PostgresClient *PostgresClient
+	Conf           *Configuration
+	Wg             *sync.WaitGroup
 }
 
 // Downloads and deduplicates an image
@@ -68,6 +69,7 @@ func NewPredator(conf *Configuration) *Predator {
 	p := new(Predator)
 	p.Conf = conf
 	p.TwitterClient = NewTwitterClient(p.Conf.TwitterConsumerKey, p.Conf.TwitterConsumerSecret)
+	p.PostgresClient = NewPostgresClient(p.Conf.PGHost, p.Conf.PGPort, p.Conf.PGUser, p.Conf.PGPassword, p.Conf.PGDbname)
 	var wg sync.WaitGroup
 	p.Wg = &wg
 	return p

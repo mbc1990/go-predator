@@ -4,12 +4,18 @@ import "encoding/json"
 import "fmt"
 import "os"
 
+// Configuration struct that conf json file is read into
 type Configuration struct {
 	UnclassifiedWorkDir   string
 	TwitterConsumerKey    string
 	TwitterConsumerSecret string
-	TwitterMaxConcurrent  int
+	TwitterMaxConcurrent  int // Not currently used
 	TwitterSources        []string
+	PGHost                string
+	PGPort                int
+	PGUser                string
+	PGPassword            string
+	PGDbname              string
 }
 
 func main() {
