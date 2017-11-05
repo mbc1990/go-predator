@@ -20,6 +20,12 @@ type Tweet struct {
 	Created_at string
 	Text       string
 	Id_str     string
+	Media_url  string
+	Entities   struct {
+		Media []struct {
+			Media_url string
+		}
+	}
 }
 
 type AuthResponse struct {

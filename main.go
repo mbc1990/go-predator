@@ -5,9 +5,11 @@ import "fmt"
 import "os"
 
 type Configuration struct {
+	UnclassifiedWorkDir   string
 	TwitterConsumerKey    string
 	TwitterConsumerSecret string
 	TwitterMaxConcurrent  int
+	TwitterSources        []string
 }
 
 func main() {
