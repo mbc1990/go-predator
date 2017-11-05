@@ -6,14 +6,17 @@ import "log"
 import "net/http"
 import "os"
 import "strings"
+import "sync"
 
 type Predator struct {
 	TwitterClient *TwitterClient
 	Conf          *Configuration
+	Wg            *sync.WaitGroup
 }
 
 // Downloads and deduplicates an image
 func (p *Predator) HandleImage(url string) {
+	defer p.Wg.Done()
 	fmt.Println("Downloading image from " + url)
 	resp, err := http.Get(url)
 	if err != nil {
@@ -37,23 +40,35 @@ func (p *Predator) HandleImage(url string) {
 	file.Close()
 }
 
+// Hits twitter api and downloads images
+func (p *Predator) ProcessTwitterTimeline(handle string) {
+	defer p.Wg.Done()
+	res := p.TwitterClient.GetTweets(handle)
+	for _, tweet := range res {
+		medias := tweet.Entities.Media
+		for _, media := range medias {
+			url := media.Media_url
+			// TODO: If URL in already queried, skip
+			p.Wg.Add(1)
+			go p.HandleImage(url)
+		}
+	}
+}
+
 // Entry point for a single run across all image sources
 func (p *Predator) Run() {
 	for _, handle := range p.Conf.TwitterSources {
-		res := p.TwitterClient.GetTweets(handle)
-		for _, tweet := range res {
-			medias := tweet.Entities.Media
-			for _, media := range medias {
-				url := media.Media_url
-				p.HandleImage(url)
-			}
-		}
+		p.Wg.Add(1)
+		go p.ProcessTwitterTimeline(handle)
 	}
+	p.Wg.Wait()
 }
 
 func NewPredator(conf *Configuration) *Predator {
 	p := new(Predator)
 	p.Conf = conf
 	p.TwitterClient = NewTwitterClient(p.Conf.TwitterConsumerKey, p.Conf.TwitterConsumerSecret)
+	var wg sync.WaitGroup
+	p.Wg = &wg
 	return p
 }
