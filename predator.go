@@ -21,7 +21,11 @@ func (p *Predator) HandleImage(url string, source string, sourceId string) {
 	fmt.Println("Downloading image from " + url)
 	resp, err := http.Get(url)
 	if err != nil {
-		log.Fatal(err)
+		// Don't exit program here since we expect a baseline of HTTP errors
+		log.Print(err)
+
+		// No response body to close
+		return
 	}
 	defer resp.Body.Close()
 

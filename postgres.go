@@ -18,7 +18,6 @@ func (p *PostgresClient) GetDB() *sql.DB {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
 		p.Host, p.Port, p.User, p.Password, p.Dbname)
-	fmt.Println(psqlInfo)
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
 		panic(err)
@@ -50,6 +49,7 @@ func (p *PostgresClient) InsertImage(filename string, original_url string,
 // connected to the image
 func (p *PostgresClient) ImageExists(sourceId string) bool {
 	db := p.GetDB()
+	defer db.Close()
 	sqlStatement := `
     SELECT COUNT(*) FROM images WHERE source_id IN ($1)`
 	rows, err := db.Query(sqlStatement, sourceId)
