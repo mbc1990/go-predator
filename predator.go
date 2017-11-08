@@ -13,6 +13,7 @@ type Predator struct {
 	PostgresClient *PostgresClient
 	Conf           *Configuration
 	Wg             *sync.WaitGroup
+	ExistingImages map[string]bool
 }
 
 // Downloads an image and writes its metadata to postgres
@@ -50,10 +51,9 @@ func (p *Predator) HandleImage(url string, source string, sourceId string) {
 func (p *Predator) ProcessTwitterTimeline(handle string) {
 	defer p.Wg.Done()
 	res := p.TwitterClient.GetTweets(handle)
-	existing := p.PostgresClient.GetExistingImages()
 	for _, tweet := range res {
 		// If we've processed this tweet already, continue
-		if _, ok := existing[tweet.Id_str]; ok {
+		if _, ok := p.ExistingImages[tweet.Id_str]; ok {
 			continue
 		}
 		// Otherwise, grab the media URLs and process them
@@ -82,6 +82,8 @@ func NewPredator(conf *Configuration) *Predator {
 		p.Conf.TwitterConsumerSecret)
 	p.PostgresClient = NewPostgresClient(p.Conf.PGHost, p.Conf.PGPort,
 		p.Conf.PGUser, p.Conf.PGPassword, p.Conf.PGDbname)
+
+	p.ExistingImages = p.PostgresClient.GetExistingImages()
 	var wg sync.WaitGroup
 	p.Wg = &wg
 	return p
