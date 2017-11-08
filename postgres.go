@@ -11,9 +11,9 @@ type PostgresClient struct {
 	User     string
 	Password string
 	Dbname   string
+	Db       *sql.DB
 }
 
-// Get a DB connection
 func (p *PostgresClient) GetDB() *sql.DB {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
@@ -33,11 +33,9 @@ func (p *PostgresClient) GetDB() *sql.DB {
 // This is necessary to avoid doing thousands of simultaneous
 // db queries to check if tweets/images have already been processed.
 func (p *PostgresClient) GetExistingImages() map[string]bool {
-	db := p.GetDB()
-	defer db.Close()
 	sqlStatement := `
     SELECT source_id FROM images`
-	rows, err := db.Query(sqlStatement)
+	rows, err := p.Db.Query(sqlStatement)
 	defer rows.Close()
 	if err != nil {
 		panic(err)
@@ -62,12 +60,10 @@ func (p *PostgresClient) GetExistingImages() map[string]bool {
 // Add an image to the images table
 func (p *PostgresClient) InsertImage(filename string, original_url string,
 	source string, source_id string) {
-	db := p.GetDB()
-	defer db.Close()
 	sqlStatement := `  
   INSERT INTO images (filename, original_url, source, source_id, classified)
   VALUES ($1, $2, $3, $4, $5)`
-	_, err := db.Exec(sqlStatement, filename, original_url, source, source_id, false)
+	_, err := p.Db.Exec(sqlStatement, filename, original_url, source, source_id, false)
 	if err != nil {
 		panic(err)
 	}
@@ -78,11 +74,9 @@ func (p *PostgresClient) InsertImage(filename string, original_url string,
 // social media sources that provide an internally unique ID
 // connected to the image
 func (p *PostgresClient) ImageExists(sourceId string) bool {
-	db := p.GetDB()
-	defer db.Close()
 	sqlStatement := `
     SELECT COUNT(*) FROM images WHERE source_id IN ($1)`
-	rows, err := db.Query(sqlStatement, sourceId)
+	rows, err := p.Db.Query(sqlStatement, sourceId)
 	defer rows.Close()
 	if err != nil {
 		panic(err)
@@ -103,5 +97,6 @@ func NewPostgresClient(pgHost string, pgPort int, pgUser string,
 	p.User = pgUser
 	p.Password = pgPassword
 	p.Dbname = pgDbname
+	p.Db = p.GetDB()
 	return p
 }
