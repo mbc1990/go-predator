@@ -98,5 +98,6 @@ func NewPostgresClient(pgHost string, pgPort int, pgUser string,
 	p.Password = pgPassword
 	p.Dbname = pgDbname
 	p.Db = p.GetDB()
+	p.Db.SetMaxOpenConns(50)
 	return p
 }
