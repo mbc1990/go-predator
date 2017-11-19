@@ -64,7 +64,7 @@ func (fc *FacebookClient) GetImageUrlsFromPostId(postId string) []ImageInfo {
 	return ret
 }
 
-func (fc *FacebookClient) GetFeed(groupId int) *FeedResponse {
+func (fc *FacebookClient) GetFeed(groupId string) *FeedResponse {
 	url := fmt.Sprintf(fc.feedUrl, groupId) + "?access_token=" + fc.accessToken
 	client := &http.Client{}
 	req, _ := http.NewRequest("GET", url, nil)
@@ -88,7 +88,7 @@ func NewFacebookClient(accessToken string) *FacebookClient {
 	client.accessToken = accessToken
 
 	// Set endpoint urls
-	client.feedUrl = "https://graph.facebook.com/v2.11/%d/feed"
+	client.feedUrl = "https://graph.facebook.com/v2.11/%s/feed"
 	client.attachmentUrl = "https://graph.facebook.com/v2.11/%s/attachments"
 
 	return client

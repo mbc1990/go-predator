@@ -11,7 +11,7 @@ type Configuration struct {
 	TwitterConsumerSecret string
 	TwitterMaxConcurrent  int // Not currently used
 	TwitterSources        []string
-	FacebookSources       []int
+	FacebookSources       []string
 	FacebookAccessToken   string
 	PGHost                string
 	PGPort                int

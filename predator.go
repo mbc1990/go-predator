@@ -68,7 +68,7 @@ func (p *Predator) ProcessTwitterTimeline(handle string) {
 	}
 }
 
-func (p *Predator) ProcessFacebookPage(groupId int) {
+func (p *Predator) ProcessFacebookPage(groupId string) {
 	fmt.Println("Processing facebook page")
 	defer p.Wg.Done()
 	res := p.FacebookClient.GetFeed(groupId)
