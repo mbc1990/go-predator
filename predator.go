@@ -10,6 +10,7 @@ import "sync"
 
 type Predator struct {
 	TwitterClient  *TwitterClient
+	FacebookClient *FacebookClient
 	PostgresClient *PostgresClient
 	Conf           *Configuration
 	Wg             *sync.WaitGroup
@@ -49,6 +50,7 @@ func (p *Predator) HandleImage(url string, source string, sourceId string) {
 
 // Hits twitter api and downloads images
 func (p *Predator) ProcessTwitterTimeline(handle string) {
+	fmt.Println("Processing timeline")
 	defer p.Wg.Done()
 	res := p.TwitterClient.GetTweets(handle)
 	for _, tweet := range res {
@@ -66,11 +68,33 @@ func (p *Predator) ProcessTwitterTimeline(handle string) {
 	}
 }
 
+func (p *Predator) ProcessFacebookPage(groupId int) {
+	fmt.Println("Processing facebook page")
+	defer p.Wg.Done()
+	res := p.FacebookClient.GetFeed(groupId)
+	for _, item := range res.Data {
+		p.Wg.Add(1)
+		go func(id string) {
+			defer p.Wg.Done()
+			imageInfo := p.FacebookClient.GetImageUrlsFromPostId(id)
+
+			for _, info := range imageInfo {
+				p.Wg.Add(1)
+				go p.HandleImage(info.Url, "facebook", info.Id)
+			}
+		}(item.Id)
+	}
+}
+
 // Entry point for a single run across all image sources
 func (p *Predator) Run() {
 	for _, handle := range p.Conf.TwitterSources {
 		p.Wg.Add(1)
 		go p.ProcessTwitterTimeline(handle)
+	}
+	for _, groupId := range p.Conf.FacebookSources {
+		p.Wg.Add(1)
+		go p.ProcessFacebookPage(groupId)
 	}
 	p.Wg.Wait()
 }
@@ -78,8 +102,15 @@ func (p *Predator) Run() {
 func NewPredator(conf *Configuration) *Predator {
 	p := new(Predator)
 	p.Conf = conf
+
+	// Twitter
 	p.TwitterClient = NewTwitterClient(p.Conf.TwitterConsumerKey,
 		p.Conf.TwitterConsumerSecret)
+
+	// Facebook
+	p.FacebookClient = NewFacebookClient(p.Conf.FacebookAccessToken)
+
+	// Postgres
 	p.PostgresClient = NewPostgresClient(p.Conf.PGHost, p.Conf.PGPort,
 		p.Conf.PGUser, p.Conf.PGPassword, p.Conf.PGDbname)
 
