@@ -41,8 +41,6 @@ type ImageInfo struct {
 
 // Hits the /attachment url and gets the image url from the post
 func (fc *FacebookClient) GetImageUrlsFromPostId(postId string) []ImageInfo {
-	// TODO: Post ID is always the last post id when this is called
-	fmt.Println("Getting images for post id: " + postId)
 	url := fmt.Sprintf(fc.attachmentUrl, postId) + "?access_token=" + fc.accessToken
 	client := &http.Client{}
 	req, _ := http.NewRequest("GET", url, nil)
