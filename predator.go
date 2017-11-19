@@ -72,7 +72,26 @@ func (p *Predator) ProcessFacebookPage(groupId int) {
 	fmt.Println("Processing facebook page")
 	defer p.Wg.Done()
 	res := p.FacebookClient.GetFeed(groupId)
-	fmt.Println(res)
+	for _, item := range res.Data {
+		fmt.Println("Processing feed item: " + item.Id)
+		p.Wg.Add(1)
+		go func() {
+			defer p.Wg.Done()
+			// TODO: Something weird is going on here with the struct indirection
+			// TODO: item.Id for this call gets set to the last value
+			// TODO: from the iteration
+			imageInfo := p.FacebookClient.GetImageUrlsFromPostId(item.Id)
+			fmt.Println(imageInfo)
+			/*
+				for _, info := range imageInfo {
+					// p.Wg.Add(1)
+					// fmt.Println(info.Id)
+					// fmt.Println("\n")
+					// go p.HandleImage(url, "facebook", )
+				}
+			*/
+		}()
+	}
 }
 
 // Entry point for a single run across all image sources
