@@ -88,13 +88,10 @@ func (p *Predator) ProcessFacebookPage(groupId int) {
 
 // Entry point for a single run across all image sources
 func (p *Predator) Run() {
-	// TODO: Uncomment
-	/*
-		for _, handle := range p.Conf.TwitterSources {
-			p.Wg.Add(1)
-			go p.ProcessTwitterTimeline(handle)
-		}
-	*/
+	for _, handle := range p.Conf.TwitterSources {
+		p.Wg.Add(1)
+		go p.ProcessTwitterTimeline(handle)
+	}
 	for _, groupId := range p.Conf.FacebookSources {
 		p.Wg.Add(1)
 		go p.ProcessFacebookPage(groupId)
