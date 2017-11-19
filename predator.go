@@ -7,14 +7,17 @@ import "net/http"
 import "os"
 import "strings"
 import "sync"
+import "crypto/md5"
+import "encoding/hex"
 
 type Predator struct {
-	TwitterClient  *TwitterClient
-	FacebookClient *FacebookClient
-	PostgresClient *PostgresClient
-	Conf           *Configuration
-	Wg             *sync.WaitGroup
-	ExistingImages map[string]bool
+	TwitterClient       *TwitterClient
+	FacebookClient      *FacebookClient
+	FacebookWorkerQueue chan ImageInfo
+	PostgresClient      *PostgresClient
+	Conf                *Configuration
+	Wg                  *sync.WaitGroup
+	ExistingImages      map[string]bool
 }
 
 // Downloads an image and writes its metadata to postgres
@@ -34,6 +37,9 @@ func (p *Predator) HandleImage(url string, source string, sourceId string) {
 	// Get the filename
 	spl := strings.Split(url, "/")
 	fname := spl[len(spl)-1]
+
+	// Make filenames unique and not too long
+	fname = getMd5(fname)
 
 	// Create the file and copy the response body into it
 	file, err := os.Create(p.Conf.UnclassifiedWorkDir + fname)
@@ -79,24 +85,47 @@ func (p *Predator) ProcessFacebookPage(groupId string) {
 			imageInfo := p.FacebookClient.GetImageUrlsFromPostId(id)
 
 			for _, info := range imageInfo {
-				p.Wg.Add(1)
-				go p.HandleImage(info.Url, "facebook", info.Id)
+				if _, ok := p.ExistingImages[info.Id]; ok {
+					continue
+				}
+				p.FacebookWorkerQueue <- info
 			}
 		}(item.Id)
 	}
 }
 
+func (p *Predator) FacebookImageWorker() {
+	for info := range p.FacebookWorkerQueue {
+		p.Wg.Add(1)
+		go p.HandleImage(info.Url, "facebook", info.Id)
+	}
+}
+
 // Entry point for a single run across all image sources
 func (p *Predator) Run() {
+	// Twitter
 	for _, handle := range p.Conf.TwitterSources {
 		p.Wg.Add(1)
 		go p.ProcessTwitterTimeline(handle)
 	}
+
+	// Populate facebook worker pool
+	for i := 0; i < 1; i++ {
+		go p.FacebookImageWorker()
+	}
+
+	// Facebook
 	for _, groupId := range p.Conf.FacebookSources {
 		p.Wg.Add(1)
 		go p.ProcessFacebookPage(groupId)
 	}
 	p.Wg.Wait()
+}
+
+func getMd5(str string) string {
+	hasher := md5.New()
+	hasher.Write([]byte(str))
+	return hex.EncodeToString(hasher.Sum(nil))
 }
 
 func NewPredator(conf *Configuration) *Predator {
@@ -109,6 +138,7 @@ func NewPredator(conf *Configuration) *Predator {
 
 	// Facebook
 	p.FacebookClient = NewFacebookClient(p.Conf.FacebookAccessToken)
+	p.FacebookWorkerQueue = make(chan ImageInfo, 1000)
 
 	// Postgres
 	p.PostgresClient = NewPostgresClient(p.Conf.PGHost, p.Conf.PGPort,

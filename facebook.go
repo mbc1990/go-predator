@@ -1,6 +1,7 @@
 package main
 
 import "fmt"
+import "log"
 import "encoding/json"
 import "io/ioutil"
 import "net/http"
@@ -45,8 +46,11 @@ func (fc *FacebookClient) GetImageUrlsFromPostId(postId string) []ImageInfo {
 	client := &http.Client{}
 	req, _ := http.NewRequest("GET", url, nil)
 	resp, err := client.Do(req)
+
+	// TLS handshake timeout
 	if err != nil {
-		panic(err)
+		log.Print(err)
+		return make([]ImageInfo, 0)
 	}
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
