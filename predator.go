@@ -110,7 +110,7 @@ func (p *Predator) Run() {
 	}
 
 	// Populate facebook worker pool
-	for i := 0; i < 1; i++ {
+	for i := 0; i < p.Conf.NumFacebookWorkers; i++ {
 		go p.FacebookImageWorker()
 	}
 

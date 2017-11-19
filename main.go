@@ -13,6 +13,7 @@ type Configuration struct {
 	TwitterSources        []string
 	FacebookSources       []string
 	FacebookAccessToken   string
+	NumFacebookWorkers    int
 	PGHost                string
 	PGPort                int
 	PGUser                string
