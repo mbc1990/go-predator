@@ -74,10 +74,10 @@ func (p *Predator) ProcessTwitterTimeline(handle string) {
 	}
 }
 
-func (p *Predator) ProcessFacebookPage(groupId string) {
+func (p *Predator) ProcessFacebookPage(feedId string) {
 	fmt.Println("Processing facebook page")
 	defer p.Wg.Done()
-	res := p.FacebookClient.GetFeed(groupId)
+	res := p.FacebookClient.GetFeed(feedId)
 	for _, item := range res.Data {
 		p.Wg.Add(1)
 		go func(id string) {
@@ -115,9 +115,9 @@ func (p *Predator) Run() {
 	}
 
 	// Facebook
-	for _, groupId := range p.Conf.FacebookSources {
+	for _, feedId := range p.Conf.FacebookSources {
 		p.Wg.Add(1)
-		go p.ProcessFacebookPage(groupId)
+		go p.ProcessFacebookPage(feedId)
 	}
 	p.Wg.Wait()
 }
