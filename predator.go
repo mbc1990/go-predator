@@ -41,6 +41,10 @@ func (p *Predator) HandleImage(url string, source string, sourceId string) {
 	// Make filenames unique and not too long
 	fname = getMd5(fname)
 
+	if _, err := os.Stat(p.Conf.UnclassifiedWorkDir + fname); !os.IsNotExist(err) {
+		log.Fatal("File " + fname + " already exists")
+	}
+
 	// Create the file and copy the response body into it
 	file, err := os.Create(p.Conf.UnclassifiedWorkDir + fname)
 	defer file.Close()
@@ -88,6 +92,10 @@ func (p *Predator) ProcessFacebookPage(feedId string) {
 				if _, ok := p.ExistingImages[info.Id]; ok {
 					continue
 				}
+
+				// Update the existing images map with this value
+				// TODO: This needs to by a sync map
+				p.ExistingImages[info.Id] = true
 				p.FacebookWorkerQueue <- info
 			}
 		}(item.Id)

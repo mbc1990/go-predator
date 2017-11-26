@@ -73,6 +73,11 @@ func (fc *FacebookClient) GetFeed(groupId string) *FeedResponse {
 	client := &http.Client{}
 	req, _ := http.NewRequest("GET", url, nil)
 	resp, err := client.Do(req)
+
+	// Don't crash here because there may be goroutines from other ingesters still running
+	if resp.StatusCode == 400 {
+		log.Print("Bad facebook request - probably an expired access token")
+	}
 	if err != nil {
 		panic(err)
 	}
