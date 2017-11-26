@@ -73,6 +73,7 @@ func (p *Predator) ProcessTwitterTimeline(handle string) {
 		medias := tweet.Entities.Media
 		for _, media := range medias {
 			url := media.Media_url
+			p.ExistingImages.Store(tweet.Id_str, true)
 			p.Wg.Add(1)
 			go p.HandleImage(url, "twitter", tweet.Id_str)
 		}
