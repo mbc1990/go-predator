@@ -17,7 +17,7 @@ type Predator struct {
 	PostgresClient      *PostgresClient
 	Conf                *Configuration
 	Wg                  *sync.WaitGroup
-	ExistingImages      map[string]bool
+	ExistingImages      *sync.Map
 }
 
 // Downloads an image and writes its metadata to postgres
@@ -65,7 +65,7 @@ func (p *Predator) ProcessTwitterTimeline(handle string) {
 	res := p.TwitterClient.GetTweets(handle)
 	for _, tweet := range res {
 		// If we've processed this tweet already, continue
-		if _, ok := p.ExistingImages[tweet.Id_str]; ok {
+		if _, ok := p.ExistingImages.Load(tweet.Id_str); ok {
 			continue
 		}
 		// Otherwise, grab the media URLs and process them
@@ -89,13 +89,12 @@ func (p *Predator) ProcessFacebookPage(feedId string) {
 			imageInfo := p.FacebookClient.GetImageUrlsFromPostId(id)
 
 			for _, info := range imageInfo {
-				if _, ok := p.ExistingImages[info.Id]; ok {
+				if _, ok := p.ExistingImages.Load(info.Id); ok {
 					continue
 				}
 
 				// Update the existing images map with this value
-				// TODO: This needs to by a sync map
-				p.ExistingImages[info.Id] = true
+				p.ExistingImages.Store(info.Id, true)
 				p.FacebookWorkerQueue <- info
 			}
 		}(item.Id)
@@ -155,5 +154,7 @@ func NewPredator(conf *Configuration) *Predator {
 	p.ExistingImages = p.PostgresClient.GetExistingImages()
 	var wg sync.WaitGroup
 	p.Wg = &wg
+
+	// We have concurrent reads and writes to this map
 	return p
 }

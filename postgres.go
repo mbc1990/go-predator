@@ -1,6 +1,7 @@
 package main
 
 import "database/sql"
+import "sync"
 import "fmt"
 import _ "github.com/lib/pq"
 
@@ -32,7 +33,7 @@ func (p *PostgresClient) GetDB() *sql.DB {
 // Get a slice of source_ids that already exist in a database.
 // This is necessary to avoid doing thousands of simultaneous
 // db queries to check if tweets/images have already been processed.
-func (p *PostgresClient) GetExistingImages() map[string]bool {
+func (p *PostgresClient) GetExistingImages() *sync.Map {
 	sqlStatement := `
     SELECT source_id FROM images`
 	rows, err := p.Db.Query(sqlStatement)
@@ -49,12 +50,11 @@ func (p *PostgresClient) GetExistingImages() map[string]bool {
 		}
 		existing = append(existing, source_id)
 	}
-	var res map[string]bool
-	res = make(map[string]bool)
+	var res sync.Map
 	for _, el := range existing {
-		res[el] = true
+		res.Store(el, true)
 	}
-	return res
+	return &res
 }
 
 // Add an image to the images table
