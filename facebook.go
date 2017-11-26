@@ -60,10 +60,13 @@ func (fc *FacebookClient) GetImageUrlsFromPostId(postId string) []ImageInfo {
 	json.Unmarshal(body, &att)
 	ret := make([]ImageInfo, 0)
 	for _, data := range att.Data {
-		info := ImageInfo{}
-		info.Url = data.Media.Image.Src
-		info.Id = data.Target.Id
-		ret = append(ret, info)
+		// Since missing values get unmarshalled into their type's 0'd value, make sure the src exists before we make an ImageInfo struct
+		if len(data.Media.Image.Src) > 0 {
+			info := ImageInfo{}
+			info.Url = data.Media.Image.Src
+			info.Id = data.Target.Id
+			ret = append(ret, info)
+		}
 	}
 	return ret
 }
