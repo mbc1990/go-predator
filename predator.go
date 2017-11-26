@@ -42,7 +42,8 @@ func (p *Predator) HandleImage(url string, source string, sourceId string) {
 	fname = getMd5(fname)
 
 	if _, err := os.Stat(p.Conf.UnclassifiedWorkDir + fname); !os.IsNotExist(err) {
-		log.Fatal("File " + fname + " already exists")
+		log.Print("File " + fname + " already exists")
+		return
 	}
 
 	// Create the file and copy the response body into it
