@@ -157,6 +157,5 @@ func NewPredator(conf *Configuration) *Predator {
 	var wg sync.WaitGroup
 	p.Wg = &wg
 
-	// We have concurrent reads and writes to this map
 	return p
 }
