@@ -97,6 +97,8 @@ func (p *Predator) ProcessFacebookPage(feedId string) {
 
 				// Update the existing images map with this value
 				p.ExistingImages.Store(info.Id, true)
+
+				// Add image GET to worker queue
 				p.FacebookWorkerQueue <- info
 			}
 		}(item.Id)
