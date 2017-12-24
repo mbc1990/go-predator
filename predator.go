@@ -107,8 +107,9 @@ func (p *Predator) ProcessFacebookPage(feedId string) {
 
 func (p *Predator) FacebookImageWorker() {
 	for info := range p.FacebookWorkerQueue {
+		// TODO: Refactor handle image so that the wg is handled outside of the calls
 		p.Wg.Add(1)
-		go p.HandleImage(info.Url, "facebook", info.Id)
+		p.HandleImage(info.Url, "facebook", info.Id)
 	}
 }
 
