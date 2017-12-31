@@ -41,6 +41,7 @@ func (p *Predator) HandleImage(url string, source string, sourceId string) {
 	// Make filenames unique and not too long
 	fname = getMd5(fname)
 
+	// TODO: Rename UnclassifiedWorkDir to OutputDir
 	if _, err := os.Stat(p.Conf.UnclassifiedWorkDir + fname); !os.IsNotExist(err) {
 		log.Print("File " + fname + " already exists")
 		return
@@ -73,6 +74,10 @@ func (p *Predator) ProcessTwitterTimeline(handle string) {
 		medias := tweet.Entities.Media
 		for _, media := range medias {
 			url := media.Media_url
+			// Video thumbnails tend to be poor quality, so throw them out
+			if strings.Contains(url, "video_thumb") {
+				continue
+			}
 			p.ExistingImages.Store(tweet.Id_str, true)
 			p.Wg.Add(1)
 			go p.HandleImage(url, "twitter", tweet.Id_str)
